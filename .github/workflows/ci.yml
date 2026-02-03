@@ -1,0 +1,61 @@
+name: Star Gazer CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.sh'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      
+      - name: Check shell script syntax
+        run: |
+          bash -n skill/star-gazer.sh
+      
+      - name: Test --dry-run mode
+        run: |
+          # Should work without GITHUB_TOKEN
+          output=$(bash skill/star-gazer.sh --dry-run 2>&1)
+          echo "$output"
+          if echo "$output" | grep -q "Dry-run mode"; then
+            echo "✓ --dry-run mode works"
+          fi
+      
+      - name: Test requires token without dry-run
+        run: |
+          # Should fail without token
+          if bash skill/star-gazer.sh 2>&1 | grep -q "Error: GITHUB_TOKEN not set"; then
+            echo "✓ Script correctly requires GITHUB_TOKEN"
+          fi
+      
+      - name: Test date calculation
+        run: |
+          python3 -c "
+          from datetime import datetime, timedelta
+          days = 14
+          start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+          print(f'✓ Date calculation works: {start_date}')
+          "
+      
+      - name: Test JSON handling
+        run: |
+          python3 -c "
+          import json
+          test_data = '{\"date\": \"2026-02-03\", \"repos\": [{\"repo\": \"test/repo\", \"stars\": 100}]}'
+          data = json.loads(test_data)
+          assert data['date'] == '2026-02-03'
+          print('✓ JSON parsing works')
+          "

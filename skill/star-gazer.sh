@@ -1,6 +1,6 @@
 #!/bin/bash
 # Star Gazer - Track GitHub repos with most star gains
-# Usage: GITHUB_TOKEN=xxx ./star-gazer.sh [days_ago]
+# Usage: GITHUB_TOKEN=xxx ./star-gazer.sh [days_ago] [--dry-run]
 
 set -e
 
@@ -8,14 +8,34 @@ TOKEN="${GITHUB_TOKEN}"
 DATA_FILE="${GITHUB_STAR_DATA_FILE:-$HOME/.clawdbot/star-tracker.json}"
 DAYS="${1:-14}"
 TODAY=$(date +%Y-%m-%d)
+DRY_RUN=false
 
-if [ -z "$TOKEN" ]; then
+# Check for --dry-run flag
+for arg in "$@"; do
+  if [ "$arg" = "--dry-run" ] || [ "$arg" = "-n" ]; then
+    DRY_RUN=true
+  fi
+done
+
+if [ -z "$TOKEN" ] && [ "$DRY_RUN" = false ]; then
     echo "Error: GITHUB_TOKEN not set"
+    echo "Usage: GITHUB_TOKEN=xxx ./star-gazer.sh [--dry-run]"
     exit 1
 fi
 
 # Calculate date range
 START_DATE=$(python3 -c "from datetime import datetime, timedelta; print((datetime.now() - timedelta(days=$DAYS)).strftime('%Y-%m-%d'))")
+
+echo "📡 Fetching trending repos (created: >$START_DATE)..."
+
+if [ "$DRY_RUN" = true ]; then
+    echo "�Dry-run mode: Skipping API calls"
+    echo ""
+    echo "To run for real:"
+    echo "  1. Set GITHUB_TOKEN environment variable"
+    echo "  2. Run without --dry-run flag"
+    exit 0
+fi
 
 # Fetch trending repos
 REPOS=$(curl -s -H "Authorization: token $TOKEN" \
@@ -59,11 +79,11 @@ for r in new_data.get("repos", []):
 
 gains.sort(key=lambda x: x[1], reverse=True)
 
-print(f"📈 Top 5 Star Gains - {new_data['date']}")
-print("")
+print(f"\n📈 Top 5 Star Gains - {new_data['date']}")
+print("-" * 50)
 
 for repo, gain, total in gains[:5]:
-    print(f"+{gain} ⭐ {repo} (total: {total})")
+    print(f"+{gain:>4} ⭐ {repo} (total: {total})")
 
 if not gains:
     print("No significant star gains today.")
