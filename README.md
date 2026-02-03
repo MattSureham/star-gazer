@@ -9,7 +9,23 @@ Track GitHub repositories with the most star gains. Simple, lightweight, and eff
 - Calculates which repos gained the most stars each day
 - Reports top 5 gainers
 
-## Quick Start
+## As a Clawdbot Skill
+
+star-gazer is also available as a [Clawdbot skill](https://github.com/MattSureham/clawdbot/tree/main/skills/star-gazer):
+
+```bash
+# Available in Clawdbot fork at:
+# /Users/matthew/clawd/clawdbot/skills/star-gazer/
+```
+
+### Clawdbot Usage
+
+```bash
+export GITHUB_TOKEN="your_token"
+clawdbot exec --command "bash /path/to/star-gazer.sh"
+```
+
+## Standalone Usage
 
 ```bash
 # First run - captures baseline
